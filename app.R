@@ -2,6 +2,28 @@ library(tidyverse)
 library(lubridate)
 library(shiny)
 
+now_time <- now(tzone = "US/Eastern")
+current_time <- force_tz(as_datetime(hm(str_c(
+  hour(now_time),
+  minute(now_time),
+  sep = " "
+))),
+tzone = "US/Eastern") %>%
+  update(
+    year = year(now_time),
+    month = month(now_time),
+    day = day(now_time)
+  )
+
+begin_time <- update(now_time,
+                     hour = 8,
+                     minute = 0,
+                     second = 0)
+end_time <- update(now_time,
+                   hour = 23,
+                   minute = 59,
+                   second = 59)
+
 df <- read_csv("data/disney_ride_wait_times.csv",
                col_types = cols(
                  park = col_character(),
@@ -20,20 +42,9 @@ df <- read_csv("data/disney_ride_wait_times.csv",
     year = year(now_time),
     month = month(now_time),
     day = day(now_time)
-  ))
+  )) %>% 
+  drop_na()
 
-now_time <- now(tzone = "US/Eastern")
-current_time <- force_tz(as_datetime(hm(str_c(
-  hour(now_time),
-  minute(now_time),
-  sep = " "
-))),
-tzone = "US/Eastern") %>%
-  update(
-    year = year(now_time),
-    month = month(now_time),
-    day = day(now_time)
-  )
 
 ui <- fluidPage(
 
@@ -65,17 +76,14 @@ server <- function(input, output) {
         geom_col(aes(x = new_time, y = avg)) +
         geom_vline(xintercept = current_time,
                    color = "red",
-                   size = 1.5) +
+                   linewidth = 1.5) +
         ggforce::facet_col(facets = vars(ride), 
                            scales = "fixed", 
                            space = "fixed") +
         scale_x_datetime(breaks = scales::date_breaks("2 hours"),
                          minor_breaks = scales::date_breaks("1 hour"), 
                          date_labels = "%I %p",
-                         limits = c(as_datetime("2023-09-16 08:00:00", 
-                                                tz = "US/Eastern"),
-                                    as_datetime("2023-09-16 24:00:00", 
-                                                tz = "US/Eastern"))) +
+                         limits = c(begin_time, end_time)) +
         scale_y_continuous(n.breaks = 7) +
         labs(x = "Time of Day", y = "Average Wait Time (min)")
     })
