@@ -1,6 +1,7 @@
 library(tidyverse)
 library(lubridate)
 library(shiny)
+library(DT)
 
 now_time <- now(tzone = "US/Eastern")
 current_time <- force_tz(as_datetime(hm(str_c(
@@ -47,58 +48,83 @@ df <- read_csv("data/disney_ride_wait_times.csv",
 
 
 ui <- fluidPage(
-
-    # Application title
-    titlePanel("Disney World Wait Times"),
-
-    wellPanel(
-      selectInput(inputId = "park",
-                  label = "Select Park:",
-                  choices = unique(df$park)),
-      uiOutput("park_rides")
-    ),
-    plotOutput("plot")
+  
+  titlePanel("Disney World Wait Times"),
+  
+  wellPanel(
+    selectInput(inputId = "park",
+                label = "Select Park:",
+                choices = unique(df$park))
+  ),
+  tabsetPanel(
+    type = "tabs",
+    tabPanel("Plot", 
+             uiOutput("park_rides"),
+             plotOutput("plot")),
+    tabPanel("Table",
+             DTOutput("table")),
+    tabPanel("Summary"),
+    
+  )#,
+  # plotOutput("plot")
 )
 
 
 server <- function(input, output) {
   
-    df_react <- reactive(
+  df_plot <- reactive(
+    df %>% 
+      filter(park == input$park,
+             ride %in% input$selected_rides) %>% 
+      group_by(park, ride, new_time) %>% 
+      summarize(avg = mean(wait, na.rm = TRUE), .groups = "drop")
+  )
+  
+  output$plot <- renderPlot({
+    ggplot(df_plot()) +
+      geom_col(aes(x = new_time, y = avg)) +
+      geom_vline(xintercept = current_time,
+                 color = "red",
+                 linewidth = 1.5) +
+      ggforce::facet_col(facets = vars(ride), 
+                         scales = "fixed", 
+                         space = "fixed") +
+      scale_x_datetime(breaks = scales::date_breaks("2 hours"),
+                       minor_breaks = scales::date_breaks("1 hour"), 
+                       date_labels = "%I %p",
+                       limits = c(begin_time, end_time)) +
+      scale_y_continuous(n.breaks = 7) +
+      labs(x = "Time of Day", y = "Average Wait Time (min)")
+  })
+  
+  output$park_rides <- renderUI({
+    rides <- df %>% 
+      filter(park == input$park) %>% 
+      pull(ride) %>% 
+      unique()
+    selectizeInput("selected_rides",
+                   label = "Select rides:",
+                   choices = rides,
+                   selected = rides[1],
+                   multiple = TRUE)
+  })
+  
+  output$table <- renderDT({
+    DT::datatable(
       df %>% 
         filter(park == input$park,
-               ride %in% input$selected_rides) %>% 
-        group_by(park, ride, new_time) %>% 
-        summarize(avg = mean(wait, na.rm = TRUE), .groups = "drop")
+               hour(new_time) == hour(current_time) + 1) %>% 
+        group_by(park, ride, hour) %>% 
+        summarize(avg = round(mean(wait, na.rm = TRUE), 3), .groups = "drop") %>% 
+        select(ride, avg) %>% 
+        arrange(avg, ride) %>% 
+        rename(Ride = ride, "Avg. Wait Time" = avg), 
+      options = list(
+        lengthMenu = list(c(5, 15, -1), c('5', '15', 'All')),
+        pageLength = -1
+      )
     )
-
-    output$plot <- renderPlot({
-       ggplot(df_react()) +
-        geom_col(aes(x = new_time, y = avg)) +
-        geom_vline(xintercept = current_time,
-                   color = "red",
-                   linewidth = 1.5) +
-        ggforce::facet_col(facets = vars(ride), 
-                           scales = "fixed", 
-                           space = "fixed") +
-        scale_x_datetime(breaks = scales::date_breaks("2 hours"),
-                         minor_breaks = scales::date_breaks("1 hour"), 
-                         date_labels = "%I %p",
-                         limits = c(begin_time, end_time)) +
-        scale_y_continuous(n.breaks = 7) +
-        labs(x = "Time of Day", y = "Average Wait Time (min)")
-    })
-    
-    output$park_rides <- renderUI({
-      rides <- df %>% 
-        filter(park == input$park) %>% 
-        pull(ride) %>% 
-        unique()
-      selectizeInput("selected_rides",
-                     label = "Select rides:",
-                     choices = rides,
-                     selected = rides[1],
-                     multiple = TRUE)
-    })
+  })
 }
 
 # Run the application 
