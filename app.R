@@ -61,7 +61,7 @@ ui <- fluidPage(
     tabPanel("Plot", 
              uiOutput("park_rides"),
              plotOutput("plot")),
-    tabPanel("Table",
+    tabPanel("Right Now",
              DTOutput("table")),
     tabPanel("Best Times",
              DTOutput("top_times")),
@@ -130,11 +130,13 @@ server <- function(input, output) {
   output$top_times <- renderDT({
     DT::datatable(
       df %>% 
-        filter(park == "Magic Kingdom") %>% 
-        group_by(park, ride, hour) %>% 
-        summarize(avg = mean(wait, na.rm = TRUE), .groups = "drop") %>% 
-        group_by(park, ride) %>% 
-        slice_min(order_by = avg, n = 4)
+        filter(park == input$park) %>% 
+        group_by(ride, hour) %>% 
+        summarize(avg = round(mean(wait, na.rm = TRUE), 3), .groups = "drop") %>% 
+        group_by(ride) %>% 
+        slice_min(order_by = avg, n = 4, na_rm = TRUE) %>% 
+        select(ride, hour, avg) %>% 
+        rename(Ride = ride, Time = hour, "Avg. Wait Time" = avg)
       )
   })
 }
