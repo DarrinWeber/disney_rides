@@ -64,6 +64,9 @@ ui <- fluidPage(
     tabPanel("Right Now",
              DTOutput("table")),
     tabPanel("Best Times",
+             numericInput("table_length",
+                          "Number of Times to Show per Ride",
+                          value = 4),
              DTOutput("top_times")),
     
   )#,
@@ -134,10 +137,18 @@ server <- function(input, output) {
         group_by(ride, hour) %>% 
         summarize(avg = round(mean(wait, na.rm = TRUE), 3), .groups = "drop") %>% 
         group_by(ride) %>% 
-        slice_min(order_by = avg, n = 4, na_rm = TRUE) %>% 
-        select(ride, hour, avg) %>% 
-        rename(Ride = ride, Time = hour, "Avg. Wait Time" = avg)
+        slice_min(order_by = avg, n = input$table_length, na_rm = TRUE) %>% 
+        mutate(hour_formatted = format(strptime(hour, "%H:%M"), "%I %p")) %>% 
+        select(ride, hour_formatted, avg) %>% 
+        rename(Ride = ride, Time = hour_formatted, "Avg. Wait Time" = avg), 
+      options = list(
+        lengthMenu = list(c(input$table_length * 3, input$table_length * 4, -1), 
+                          c(str_c(input$table_length * 3), 
+                            str_c(input$table_length * 4),
+                            'All')),
+        pageLength = input$table_length * 3
       )
+    )
   })
 }
 
