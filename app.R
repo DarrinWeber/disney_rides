@@ -85,6 +85,7 @@ server <- function(input, output) {
   )
   
   output$plot <- renderPlot({
+    req(input$park, input$selected_rides)
     ggplot(df_plot()) +
       geom_col(aes(x = new_time, y = avg)) +
       geom_vline(xintercept = current_time,
@@ -109,7 +110,6 @@ server <- function(input, output) {
     selectizeInput("selected_rides",
                    label = "Select rides:",
                    choices = rides,
-                   selected = rides[1],
                    multiple = TRUE)
   })
   
