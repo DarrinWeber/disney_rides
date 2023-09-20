@@ -119,7 +119,7 @@ server <- function(input, output) {
         filter(park == input$park,
                hour(new_time) == hour(current_time) + 1) %>% 
         group_by(park, ride, hour) %>% 
-        summarize(avg = round(mean(wait, na.rm = TRUE), 3), .groups = "drop") %>% 
+        summarize(avg = round(mean(wait, na.rm = TRUE), 0), .groups = "drop") %>% 
         select(ride, avg) %>% 
         arrange(avg, ride) %>% 
         rename(Ride = ride, "Avg. Wait Time" = avg), 
@@ -135,7 +135,7 @@ server <- function(input, output) {
       df %>% 
         filter(park == input$park) %>% 
         group_by(ride, hour) %>% 
-        summarize(avg = round(mean(wait, na.rm = TRUE), 3), .groups = "drop") %>% 
+        summarize(avg = round(mean(wait, na.rm = TRUE), 0), .groups = "drop") %>% 
         group_by(ride) %>% 
         slice_min(order_by = avg, n = input$table_length, na_rm = TRUE) %>% 
         mutate(hour_formatted = format(strptime(hour, "%H:%M"), "%I %p")) %>% 
