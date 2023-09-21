@@ -2,6 +2,9 @@ library(tidyverse)
 library(lubridate)
 library(shiny)
 library(DT)
+library(googlesheets4)
+
+gs4_auth(cache = ".env", email = "hoosierwebers@gmail.com")
 
 now_time <- now(tzone = "US/Eastern")
 current_time <- force_tz(as_datetime(hm(str_c(
@@ -25,17 +28,21 @@ end_time <- update(now_time,
                    minute = 59,
                    second = 59)
 
-df <- read_csv("data/disney_ride_wait_times.csv",
-               col_types = cols(
-                 park = col_character(),
-                 ride = col_character(),
-                 type = col_character(),
-                 day = col_datetime(),
-                 hour = col_character(),
-                 wait = col_integer()
-               ),
-               na = c("", "na")
-) %>%
+# df <- read_csv("data/disney_ride_wait_times.csv",
+#                col_types = cols(
+#                  park = col_character(),
+#                  ride = col_character(),
+#                  type = col_character(),
+#                  day = col_datetime(),
+#                  hour = col_character(),
+#                  wait = col_integer()
+#                ),
+#                na = c("", "na")
+# ) %>%
+
+df <- read_sheet("https://docs.google.com/spreadsheets/d/1yYNFNdXIQmyPdLmMrCg7OOSCOZSyQJUv07IwfGPnC8g/",
+                 col_types = "cccTci",
+                 na = c("", "na")) %>% 
   mutate(new_time = update(
     parse_date_time(hour,
                     "%H:%M",
@@ -116,6 +123,7 @@ server <- function(input, output) {
     selectizeInput("selected_rides",
                    label = "Select rides:",
                    choices = rides,
+                   width = "100%",
                    multiple = TRUE)
   })
   
