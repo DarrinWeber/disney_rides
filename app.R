@@ -13,24 +13,13 @@ custom_max <- function(x, na.rm = TRUE) {
   if (length(x) > 0) max(x, na.rm = na.rm) else 0
 }
 
-now_time <- now(tzone = "US/Eastern")
-current_time <- force_tz(as_datetime(hm(str_c(
-  hour(now_time),
-  minute(now_time),
-  sep = " "
-))),
-tzone = "US/Eastern") %>%
-  update(
-    year = year(now_time),
-    month = month(now_time),
-    day = day(now_time)
-  )
+current_time <- now(tzone = "US/Eastern") 
 
-begin_time <- update(now_time,
+begin_time <- update(current_time,
                      hour = 8,
                      minute = 0,
                      second = 0)
-end_time <- update(now_time,
+end_time <- update(current_time,
                    hour = 23,
                    minute = 59,
                    second = 59)
@@ -54,9 +43,9 @@ df <- read_sheet("https://docs.google.com/spreadsheets/d/1yYNFNdXIQmyPdLmMrCg7OO
     parse_date_time(hour,
                     "%H:%M",
                     tz = "US/Eastern"),
-    year = year(now_time),
-    month = month(now_time),
-    day = day(now_time)
+    year = year(current_time),
+    month = month(current_time),
+    mday = day(current_time)
   )) %>% 
   drop_na()
 
