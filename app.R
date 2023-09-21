@@ -6,6 +6,13 @@ library(googlesheets4)
 
 gs4_auth(cache = ".env", email = "hoosierwebers@gmail.com")
 
+custom_min <- function(x, na.rm = TRUE) {
+  if (length(x) > 0) min(x, na.rm = na.rm) else 0
+}
+custom_max <- function(x, na.rm = TRUE) {
+  if (length(x) > 0) max(x, na.rm = na.rm) else 0
+}
+
 now_time <- now(tzone = "US/Eastern")
 current_time <- force_tz(as_datetime(hm(str_c(
   hour(now_time),
@@ -84,16 +91,17 @@ ui <- fluidPage(
 
 server <- function(input, output) {
   
-  df_plot <- reactive(
+  df_plot <- reactive({
+    req(input$park, input$selected_rides)
     df %>% 
       filter(park == input$park,
              ride %in% input$selected_rides) %>% 
       group_by(park, ride, new_time) %>% 
       summarize(avg = mean(wait, na.rm = TRUE), 
-                min = min(wait, na.rm = TRUE),
-                max = max(wait, na.rm = TRUE),
+                min = custom_min(wait, na.rm = TRUE),
+                max = custom_max(wait, na.rm = TRUE),
                 .groups = "drop")
-  )
+  })
   
   output$plot <- renderPlot({
     req(input$park, input$selected_rides)
