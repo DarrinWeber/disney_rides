@@ -69,8 +69,9 @@ ui <- fluidPage(
                           value = 4),
              DTOutput("top_times")),
     
-  )#,
-  # plotOutput("plot")
+  ),
+  tags$footer("Error bars represent minimum and maximum wait times.")
+  
 )
 
 
@@ -81,13 +82,18 @@ server <- function(input, output) {
       filter(park == input$park,
              ride %in% input$selected_rides) %>% 
       group_by(park, ride, new_time) %>% 
-      summarize(avg = mean(wait, na.rm = TRUE), .groups = "drop")
+      summarize(avg = mean(wait, na.rm = TRUE), 
+                min = min(wait, na.rm = TRUE),
+                max = max(wait, na.rm = TRUE),
+                .groups = "drop")
   )
   
   output$plot <- renderPlot({
     req(input$park, input$selected_rides)
     ggplot(df_plot()) +
       geom_col(aes(x = new_time, y = avg)) +
+      geom_errorbar(aes(x = new_time, y = avg, ymin = min, ymax = max),
+                    width = 1000) +
       geom_vline(xintercept = current_time,
                  color = "red",
                  linewidth = 1.5) +
