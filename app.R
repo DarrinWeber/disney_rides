@@ -167,7 +167,20 @@ server <- function(input, output) {
                             'All')),
         pageLength = input$table_length * 3
       )
-    )
+    ) %>% 
+      formatStyle(
+        "Time",
+        color = styleEqual(
+          c("09 AM", "10 AM", "11 AM", "12 PM",
+            "01 PM", "02 PM", "03 PM", 
+            "04 PM", "05 PM", "06 PM",
+            "07 PM", "08 PM", "09 PM", "10 PM"), 
+          c("green", "green", "green", "green",
+            "darkorange", "darkorange", "darkorange", 
+            "darkorange", "darkorange", "darkorange",
+            "blue", "blue", "blue", "blue")),
+        backgroundColor = "ghostwhite"
+      )
   })
 }
 
