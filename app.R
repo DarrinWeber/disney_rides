@@ -60,6 +60,13 @@ df <- read_sheet("https://docs.google.com/spreadsheets/d/1yYNFNdXIQmyPdLmMrCg7OO
   )) %>% 
   drop_na()
 
+park_default <- case_when(
+  wday(current_time) %in% c(1, 7) ~ "Hollywood Studios",
+  wday(current_time) == 2 ~ "EPCOT",
+  wday(current_time) %in% c(3, 4, 5) ~ "Magic Kingdom",
+  wday(current_time) == 6 ~ "Animal Kingdom"
+)
+
 
 ui <- fluidPage(
   
@@ -68,7 +75,8 @@ ui <- fluidPage(
   wellPanel(
     selectInput(inputId = "park",
                 label = "Select Park:",
-                choices = unique(df$park))
+                choices = unique(df$park),
+                selected = park_default)
   ),
   tabsetPanel(
     type = "tabs",
